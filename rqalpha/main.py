@@ -143,9 +143,12 @@ def run(config, source_code=None, user_funcs=None):
         system_log.debug("\n" + pformat(config.convert_to_dict()))
 
         env.set_strategy_loader(init_strategy_loader(env, source_code, user_funcs, config))
+
+        # 1. load and start mod
         mod_handler.set_env(env)
         mod_handler.start_up()
 
+        # 2. prepare date source
         if not env.data_source:
             env.set_data_source(BaseDataSource(
                 config.base.data_bundle_path, 
@@ -160,6 +163,7 @@ def run(config, source_code=None, user_funcs=None):
 
         _adjust_start_date(env.config, env.data_proxy)
 
+        # 2. prepare context
         ctx = ExecutionContext(const.EXECUTION_PHASE.GLOBAL)
         ctx._push()
 
@@ -168,6 +172,7 @@ def run(config, source_code=None, user_funcs=None):
         env.calendar_dt = start_dt
         env.trading_dt = start_dt
 
+        # 3. prepare portfolio and event bus
         assert env.broker is not None
         assert env.event_source is not None
         if env.portfolio is None:
@@ -179,6 +184,7 @@ def run(config, source_code=None, user_funcs=None):
 
         env.event_bus.publish_event(Event(EVENT.POST_SYSTEM_INIT))
 
+        # 4. load strategy and persist_helper
         scope = create_base_scope()
         scope.update({"g": env.global_vars})
         scope.update(get_strategy_apis())
@@ -224,10 +230,12 @@ def run(config, source_code=None, user_funcs=None):
 
         init_succeed = True
 
+        # 5. load bars and run
         bar_dict = BarMap(env.data_proxy, config.base.frequency)
         executor.run(bar_dict)
         env.event_bus.publish_event(Event(EVENT.POST_STRATEGY_RUN))
 
+        # 6. print result
         if env.profile_deco:
             output_profile_result(env)
         release_print(scope)

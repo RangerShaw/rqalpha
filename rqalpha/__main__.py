@@ -19,7 +19,7 @@ from pandas import Timestamp
 from rqalpha.cmds import cli
 
 config = {
-    'base__accounts': (('stock', '10'),),
+    'base__accounts': (('stock', '1000000'),),
     'base__data_bundle_path': None,
     'base__end_date': Timestamp('2016-01-01 00:00:00'),
     'base__frequency': None,
